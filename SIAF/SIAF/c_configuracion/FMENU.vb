@@ -4,8 +4,9 @@ Imports SIAF_NEGOCIO
 
 Public Class FMENU
     Dim oMenuStrip As New MenuStrip()
-    Dim VGLMENU As New List(Of ClaseCompuesta.me_menu) : Dim _menu As New n_menu
+    Public Property VGLMENU As New List(Of ClaseCompuesta.me_menu) : Dim _menu As New n_menu
     Dim VGLENSAM As New List(Of ClaseCompuesta.Ensamblados)
+    Dim oListaMenu As New List(Of Menu)
 
 #Region "Eventos de Menu"
     Private Sub FMENU_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -22,19 +23,9 @@ Public Class FMENU
             End If
         Next
 
-        Dim oListaMenu As New List(Of Menu)
         VGLMENU = _menu.FL_MENU_LISTA().ToList()
+        CargaMenu(0, 0, Nothing, oMenuStrip)
 
-        For Each _Item In VGLMENU.Where(Function(x) x.me_idmenu >= 1 And x.me_tipo_obj = 1 And x.me_padre = 0 And x.me_estado = "A")
-
-            Dim oMenuItem As New ToolStripMenuItem(_Item.me_caption, Nothing, New EventHandler(AddressOf EventoMenu), _Item.me_nom_objeto)
-
-            For Each Menu2 In VGLMENU.Where(Function(x) x.me_idmenu >= 1 And x.me_tipo_obj = 1 And x.me_padre = _Item.me_idmenu And x.me_estado = "A")
-                Dim oSubMenuItem As New ToolStripMenuItem(Menu2.me_caption, Nothing, New EventHandler(AddressOf EventoMenu), Menu2.me_nom_objeto)
-                oMenuItem.DropDownItems.Add(oSubMenuItem)
-            Next
-            oMenuStrip.Items.Add(oMenuItem)
-        Next
         Me.MainMenuStrip = oMenuStrip
         Me.Controls.Add(oMenuStrip)
     End Sub
@@ -97,6 +88,33 @@ Public Class FMENU
         'Llamamos la rutina que no permitira abrir 2 veces el formulario
         llamarform(frmdinamico, Me)
     End Sub
+
+    Private Sub CargaMenu(ByVal p_idmenu As Integer, p_idsubmenu As Integer, ByVal p_TsMenuItem As ToolStripMenuItem, ByVal p_MenuStrip As MenuStrip)
+        Dim lista As New List(Of ClaseCompuesta.me_menu)
+        lista = VGLMENU.Where(Function(x) x.me_padre = p_idmenu And x.me_estado = "A").ToList()
+
+        For Each item In lista
+            Dim ruteicon As String = item.me_ruta_icono_desa + item.me_nom_icono
+            Dim MenuDinamico = New ToolStripMenuItem
+            If ruteicon = "" Then
+                MenuDinamico = New ToolStripMenuItem(item.me_caption, Nothing, New EventHandler(AddressOf EventoMenu), item.me_nom_objeto)
+            Else
+                MenuDinamico = New ToolStripMenuItem(item.me_caption, System.Drawing.Image.FromFile(ruteicon), New EventHandler(AddressOf EventoMenu), item.me_nom_objeto)
+
+            End If
+
+            If item.me_padre = 0 Then
+                Me.oMenuStrip.Items.Add(MenuDinamico)
+            Else
+                p_TsMenuItem.DropDownItems.Add(MenuDinamico)
+            End If
+
+            CargaMenu(item.me_idmenu, item.me_idsubmenu, MenuDinamico, p_MenuStrip)
+        Next
+
+    End Sub
+
+
 #End Region
 
 
